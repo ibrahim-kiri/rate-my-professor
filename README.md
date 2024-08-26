@@ -58,19 +58,21 @@ Replace 3.x with the desired Python version.
 
 - Fork the Repository.
 
-**Create a New Branch:**
+- Create a New Branch:
 
     ```
     git checkout -b branch name
     ```
 - Make Your Changes.
 
-**Commit Your Changes:**
+- Commit Your Changes:
+
     ```
     git commit -am 'Add new feature'
     ```
 
-**Push to the Branch:**
+- Push to the Branch:
+
     ```
     git push origin branch name
     ```
