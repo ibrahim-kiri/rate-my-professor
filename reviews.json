@@ -1,0 +1,65 @@
+{
+    "reviews": 
+    [
+        {
+        "professor": "Dr. Emily Johnson",
+        "subject": "Biology",
+        "stars": 4,
+        "review": "Dr. Johnson's lectures are engaging and well-structured. She's always willing to help during office hours."
+        },
+        {
+        "professor": "Prof. Michael Lee",
+        "subject": "Computer Science",
+        "stars": 5,
+        "review": "Brilliant professor! Makes complex topics easy to understand. His coding examples are particularly helpful."
+        },
+        {
+        "professor": "Dr. Sarah Martinez",
+        "subject": "Psychology",
+        "stars": 3,
+        "review": "Knowledgeable, but sometimes goes off-topic. Assignments can be unclear at times."
+        },
+        {
+        "professor": "Prof. David Wilson",
+        "subject": "Mathematics",
+        "stars": 4,
+        "review": "Challenging course, but Prof. Wilson is patient and explains concepts thoroughly."
+        },
+        {
+        "professor": "Dr. Lisa Chen",
+        "subject": "Chemistry",
+        "stars": 5,
+        "review": "Exceptional teacher! Her lab demonstrations are amazing and she's always prepared for class."
+        },
+        {
+        "professor": "Prof. Robert Brown",
+        "subject": "History",
+        "stars": 2,
+        "review": "Lectures are dry and monotonous. Doesn't engage well with students' questions."
+        },
+        {
+        "professor": "Dr. Amanda Taylor",
+        "subject": "English Literature",
+        "stars": 4,
+        "review": "Passionate about the subject. Encourages critical thinking and class discussions."
+        },
+        {
+        "professor": "Prof. James Anderson",
+        "subject": "Physics",
+        "stars": 3,
+        "review": "Knowledgeable but can be intimidating. Exams are much harder than homework."
+        },
+        {
+        "professor": "Dr. Maria Garcia",
+        "subject": "Sociology",
+        "stars": 5,
+        "review": "Inspiring professor! Her real-world examples make the course material relevant and interesting."
+        },
+        {
+        "professor": "Prof. Thomas Wright",
+        "subject": "Economics",
+        "stars": 4,
+        "review": "Clear explanations of complex economic theories. Assigns interesting projects."
+        }
+    ]
+}
