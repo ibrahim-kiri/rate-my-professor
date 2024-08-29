@@ -14,10 +14,9 @@
 
 - **Frontend:** NextJs, Material-UI
 - **Backend:** Python
-- **APIs:** OpenAI
-- **Styling:** Custom CSS, Background images
+- **APIs:** Gemini
 
-- Sign up for a [OpenAI](https://platform.openai.com/), [Pinecone](https://app.pinecone.io/). Get their API keys and set them up in the .env file.
+- Sign up for a [Gemini](https://ai.google.dev/gemini-api/docs/api-key?), [Pinecone](https://app.pinecone.io/). Get their API keys and set them up in the .env file.
 
 **Set Up the Python Environment:**
 
@@ -63,6 +62,7 @@ Replace 3.x with the desired Python version.
     ```
     git checkout -b branch name
     ```
+    
 - Make Your Changes.
 
 - Commit Your Changes:
