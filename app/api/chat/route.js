@@ -1,28 +1,32 @@
 import { NextResponse } from "next/server";
 import { Pinecone } from '@pinecone-database/pinecone';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { randomProjection } from './dimensionReduction';
+
+const TARGET_DIMENSION = 93;
 
 const systemPrompt = `
 You are a helpful assistant for a 'Rate My Professor' system designed to assist students in finding the best professors according to their needs. Your job is to provide the top 3 professor recommendations based on the user's query, using a combination of existing professor ratings, student reviews, and relevant metadata.
 
 When a student asks a question, you should:
 
-Interpret the Query: Understand the user's intent, which may include preferences such as subject expertise, teaching style, student satisfaction, or overall rating.
+1. Interpret the Query: Understand the user's intent, which may include preferences such as subject expertise, teaching style, student satisfaction, or overall rating.
 
-Search and Retrieve Information: Utilize the available database (or index) of professor profiles, including their ratings, reviews, subjects taught, and other relevant attributes.
+2. Search and Retrieve Information: Utilize the available database (or index) of professor profiles, including their ratings, reviews, subjects taught, and other relevant attributes.
 
-Generate a Response:
+3. Generate a Response:
+   - Provide the top 3 professors that best match the user's query.
+   - For each professor, include the following information:
+     - Name of the professor (use the exact name provided in the "Professor Name" field).
+     - Department or subject area.
+     - Average rating (e.g., out of 5 stars).
+     - A brief summary of what makes this professor a good match based on the query.
+     - Any relevant highlights from student reviews.
 
-Provide the top 3 professors that best match the user's query.
-For each professor, include the following information:
-Name of the professor.
-Department or subject area.
-Average rating (e.g., out of 5 stars).
-A brief summary of what makes this professor a good match based on the query.
-Any relevant highlights from student reviews.
-Ensure Accuracy and Relevance: Always aim to provide the most accurate and relevant recommendations, considering factors like recent reviews, consistent high ratings, and alignment with the student's needs.
+4. Ensure Accuracy and Relevance: Always aim to provide the most accurate and relevant recommendations, considering factors like recent reviews, consistent high ratings, and alignment with the student's needs.
 
-Respond with a polite and informative tone, keeping the student's needs in mind, and always ensure the information provided is up-to-date and accurate.`
+Respond with a polite and informative tone, keeping the student's needs in mind, and always ensure the information provided is up-to-date and accurate. Do not refer to professors by numbers or IDs; always use their full names as provided in the "Professor Name" field.`;
+
 
 export async function POST(req) {
     try {
@@ -31,7 +35,6 @@ export async function POST(req) {
 
         const pc = new Pinecone({
             apiKey: process.env.PINECONE_API_KEY,
-            // environment: process.env.PINECONE_ENVIRONMENT
         });
         const index = pc.index('rag');
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -44,29 +47,12 @@ export async function POST(req) {
         const embeddingResult = await embeddingModel.embedContent(text);
         console.log("Raw embedding result:", JSON.stringify(embeddingResult, null, 2));
 
-        let embedding;
-        if (Array.isArray(embeddingResult)) {
-            embedding = embeddingResult;
-        } else if (typeof embeddingResult === 'object') {
-            // Try to find an array in the object
-            const arrayProperty = Object.values(embeddingResult).find(Array.isArray);
-            if (arrayProperty) {
-                embedding = arrayProperty;
-            } else {
-                console.error("Could not find an array in the embedding result");
-                throw new Error("Embedding result does not contain an array");
-            }
-        } else {
-            console.error("Unexpected embedding result type:", typeof embeddingResult);
-            throw new Error("Failed to generate embedding: Unexpected result type");
-        }
+        let embedding = extractEmbedding(embeddingResult);
+        console.log("Original embedding dimension:", embedding.length);
 
-        if (!Array.isArray(embedding)) {
-            console.error("Embedding is not an array:", embedding);
-            throw new Error("Embedding is not in the expected format");
-        }
-
-        console.log("Extracted embedding (first 5 values):", embedding.slice(0, 5));
+        // Reduce dimensionality
+        embedding = randomProjection(embedding, TARGET_DIMENSION);
+        console.log("Reduced embedding dimension:", embedding.length);
 
         const results = await index.query({
             vector: embedding,
@@ -79,11 +65,11 @@ export async function POST(req) {
         let resultString = '\n\nReturned results from vector db:';
         results.matches.forEach((match) => {
             resultString += `\n
-            Professor: ${match.id}
-            Review: ${match.metadata.review}
+            Professor Name: ${match.metadata.professor}
             Subject: ${match.metadata.subject}
             Stars: ${match.metadata.stars}
-            \n\n
+            Review: ${match.metadata.review}
+            \n
             `;
         });
 
@@ -96,21 +82,25 @@ export async function POST(req) {
         
         const chat = model.startChat({
             history: [
-                { role: "user", parts: systemPrompt },
-                ...lastDataWithoutLastMessage.map(msg => ({ role: msg.role, parts: msg.content })),
+                {
+                    role: "user",
+                    parts: [{ text: systemPrompt }],
+                },
+                ...lastDataWithoutLastMessage.map(msg => ({
+                    role: msg.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: msg.content }],
+                })),
             ],
         });
 
-        const result = await chat.sendMessageStream(lastMessageContent);
+        const result = await chat.sendMessage(lastMessageContent);
 
         const stream = new ReadableStream({
             async start(controller) {
                 const encoder = new TextEncoder();
                 try {
-                    for await (const chunk of result.stream) {
-                        const text = encoder.encode(chunk.text());
-                        controller.enqueue(text);
-                    }
+                    const text = encoder.encode(result.response.text());
+                    controller.enqueue(text);
                 } catch (err) {
                     console.error("Streaming error:", err);
                     controller.error(err);
@@ -120,7 +110,7 @@ export async function POST(req) {
             }
         });
 
-        return new NextResponse(stream);
+return new NextResponse(stream);
 
     } catch (error) {
         console.error("Error in POST route:", error);
@@ -129,4 +119,17 @@ export async function POST(req) {
             headers: { 'Content-Type': 'application/json' },
         });
     }
+}
+
+function extractEmbedding(embeddingResult) {
+    if (Array.isArray(embeddingResult) && embeddingResult.every(item => typeof item === 'number')) {
+        return embeddingResult;
+    }
+    if (typeof embeddingResult === 'object' && embeddingResult !== null) {
+        for (let key in embeddingResult) {
+            const result = extractEmbedding(embeddingResult[key]);
+            if (result) return result;
+        }
+    }
+    throw new Error("Could not extract embedding array from the result");
 }

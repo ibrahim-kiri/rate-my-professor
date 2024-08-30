@@ -2,7 +2,6 @@
 
 import { Box, Button, Stack, TextField, Typography, useTheme } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import ChatIcon from "@mui/icons-material/Chat";
 import { useState } from "react";
 
 export default function Home() {
